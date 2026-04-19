@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc, updateDoc, increment } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -15,6 +15,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
 
 const LEVELS = [
   { id: 1, name: "Recruit", icon: "❄️", minWorkouts: 0 },
@@ -158,6 +159,31 @@ export default function App() {
     setLoading(false);
   };
 
+  const handleGoogle = async () => {
+    setLoading(true); setAuthError("");
+    try {
+      const cred = await signInWithPopup(auth, googleProvider);
+      const ref = doc(db, "users", cred.user.uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        await setDoc(ref, {
+          nombre: cred.user.displayName || "Warrior",
+          email: cred.user.email,
+          completedWorkouts: 0,
+          streak: 0,
+          lastWorkout: null,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      const updated = await getDoc(ref);
+      setUserData(updated.data());
+      setScreen("app");
+    } catch (e) {
+      setAuthError("Error al iniciar con Google");
+    }
+    setLoading(false);
+  };
+
   const handleLogout = async () => { await signOut(auth); setScreen("splash"); };
 
   const completeWorkout = async () => {
@@ -204,6 +230,14 @@ export default function App() {
         {authError && <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 12, textAlign: "center" }}>{authError}</div>}
         <button onClick={authMode === "login" ? handleLogin : handleRegister} disabled={loading} style={{ ...btnPrimary, opacity: loading ? 0.7 : 1 }}>
           {loading ? "Cargando..." : authMode === "login" ? "ENTRAR" : "CREAR CUENTA"}
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0" }}>
+          <div style={{ flex: 1, height: 1, background: "#1e3a5f" }} />
+          <span style={{ color: "#556677", fontSize: 12 }}>o</span>
+          <div style={{ flex: 1, height: 1, background: "#1e3a5f" }} />
+        </div>
+        <button onClick={handleGoogle} disabled={loading} style={{ ...btnPrimary, background: "#fff", color: "#222", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, opacity: loading ? 0.7 : 1 }}>
+          <span style={{ fontSize: 18 }}>🔵</span> Continuar con Google
         </button>
         <div style={{ textAlign: "center", marginTop: 16, color: "#556677", fontSize: 13 }}>
           {authMode === "login" ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?"}
