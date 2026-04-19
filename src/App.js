@@ -77,7 +77,7 @@ export default function App() {
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [completedWorkouts, setCompletedWorkouts] = useState(3);
-  const [streak, setStreak] = useState(5);
+  const [streak] = useState(5);
   const [weights, setWeights] = useState({});
   const intervalRef = useRef(null);
 
