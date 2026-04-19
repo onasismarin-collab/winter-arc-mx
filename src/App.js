@@ -65,9 +65,10 @@ const ROUTINES = [
 ];
 
 const PROGRAMS = [
-  { id: 1, name: "Winter Arc: Fuerza Total", price: 499, duration: "8 semanas", level: "Intermedio", icon: "🏋️", description: "El programa definitivo para construir fuerza real. 8 semanas de entrenamiento progresivo diseñado para llevarte al siguiente nivel.", included: ["24 sesiones estructuradas", "Guía de nutrición básica", "Seguimiento de progreso", "Acceso de por vida"], weeks: 8 },
-  { id: 2, name: "Cold Start: Principiantes", price: 299, duration: "4 semanas", level: "Principiante", icon: "❄️", description: "Empieza desde cero con el método correcto. 4 semanas para construir la base sólida que necesitas.", included: ["12 sesiones para principiantes", "Guía de técnica en video", "Plan de alimentación básico", "Soporte por WhatsApp"], weeks: 4 },
-  { id: 3, name: "Elite Beast Mode", price: 799, duration: "12 semanas", level: "Avanzado", icon: "👑", description: "Solo para los que están listos para el siguiente nivel. El programa más exigente del método Winter Arc.", included: ["36 sesiones avanzadas", "Periodización detallada", "Nutrición personalizada", "Acceso a comunidad privada"], weeks: 12 },
+  { id: 1, name: "Rodo Flores: Personal Training", price: 99, originalPrice: 1000, duration: "Acceso de por vida", level: "Todos los niveles", icon: "🔥", description: "Entrena directamente con el método de Rodo Flores. Acceso completo a su sistema de entrenamiento personal con rutinas exclusivas, seguimiento y soporte directo.", included: ["Rutinas personalizadas de Rodo", "Seguimiento de progreso real", "Acceso de por vida", "Actualizaciones incluidas"], weeks: null, badge: "🔥 OFERTA ESPECIAL" },
+  { id: 2, name: "Winter Arc: Fuerza Total", price: 0, originalPrice: 499, duration: "8 semanas", level: "Intermedio", icon: "🏋️", description: "El programa definitivo para construir fuerza real. 8 semanas de entrenamiento progresivo diseñado para llevarte al siguiente nivel.", included: ["24 sesiones estructuradas", "Guía de nutrición básica", "Seguimiento de progreso", "Acceso de por vida"], weeks: 8, badge: "🎁 GRATIS" },
+  { id: 3, name: "Cold Start: Principiantes", price: 0, originalPrice: 499, duration: "4 semanas", level: "Principiante", icon: "❄️", description: "Empieza desde cero con el método correcto. 4 semanas para construir la base sólida que necesitas.", included: ["12 sesiones para principiantes", "Guía de técnica en video", "Plan de alimentación básico", "Soporte por WhatsApp"], weeks: 4, badge: "🎁 GRATIS" },
+  { id: 4, name: "Elite Beast Mode", price: 0, originalPrice: 499, duration: "12 semanas", level: "Avanzado", icon: "👑", description: "Solo para los que están listos para el siguiente nivel. El programa más exigente del método Winter Arc.", included: ["36 sesiones avanzadas", "Periodización detallada", "Nutrición personalizada", "Acceso a comunidad privada"], weeks: 12, badge: "🎁 GRATIS" },
 ];
 
 const TESTIMONIALS = [
@@ -356,33 +357,123 @@ export default function App() {
   // ── EXERCISE DETAIL ──────────────────────────────────────
   if (activeExercise) {
     const ex = activeExercise;
+    const currentSet = weights[`${ex.name}-currentSet`] || 0;
+    const completedSets = weights[`${ex.name}-completed`] || [];
+    const isResting = timerSecs > 0 || timerOn;
+    const allDone = completedSets.length >= ex.sets;
+
+    const handleCompleteSet = () => {
+      const kg = weights[`${ex.name}-input`] || "0";
+      const newCompleted = [...completedSets, { set: currentSet + 1, kg, reps: ex.reps }];
+      setWeights(w => ({ ...w, [`${ex.name}-completed`]: newCompleted, [`${ex.name}-currentSet`]: currentSet + 1, [`${ex.name}-input`]: "" }));
+      if (newCompleted.length < ex.sets) { setTimerSecs(ex.rest); setTimerOn(true); }
+    };
+
     return (
-      <div style={S.page}>
+      <div style={{ ...S.page, background: "linear-gradient(180deg, #0a0a0f 0%, #0d1b2a 100%)" }}>
         <div style={{ padding: 24 }}>
-          <button onClick={() => { setActiveExercise(null); setTimerOn(false); setTimerSecs(0); }} style={{ background: "none", border: "none", color: "#7ec8e3", fontSize: 14, cursor: "pointer", marginBottom: 24, padding: 0 }}>← Volver</button>
-          <div style={{ fontSize: 28, fontWeight: 900, marginBottom: 4 }}>{ex.name}</div>
-          <div style={{ color: "#7ec8e3", marginBottom: 24, fontSize: 13 }}>{ex.sets} series × {ex.reps} reps</div>
-          <div style={{ ...S.card, textAlign: "center" }}><div style={{ fontSize: 80 }}>🏋️</div><div style={{ color: "#8899aa", fontSize: 13 }}>Video del ejercicio próximamente</div></div>
-          {Array.from({ length: ex.sets }).map((_, i) => (
-            <div key={i} style={{ ...S.card, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ color: "#7ec8e3", fontWeight: 700 }}>Serie {i + 1}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <input type="number" placeholder="kg" value={weights[`${ex.name}-${i}`] || ""} onChange={e => setWeights(w => ({ ...w, [`${ex.name}-${i}`]: e.target.value }))} style={{ background: "#111827", border: "1px solid #1e3a5f", color: "#fff", padding: "8px 12px", borderRadius: 8, width: 70, fontSize: 14, outline: "none" }} />
-                <span style={{ color: "#556677", fontSize: 12 }}>× {ex.reps}</span>
+          <button onClick={() => { setActiveExercise(null); setTimerOn(false); setTimerSecs(0); }} style={{ background: "none", border: "none", color: "#7ec8e3", fontSize: 14, cursor: "pointer", marginBottom: 20, padding: 0 }}>← Volver</button>
+
+          {/* Exercise header */}
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <div style={{ fontSize: 72, marginBottom: 8, animation: "pulse 2s infinite" }}>🏋️</div>
+            <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 4 }}>{ex.name}</div>
+            <div style={{ color: "#8899aa", fontSize: 13 }}>{ex.sets} series · {ex.reps} reps · {ex.rest}s descanso</div>
+          </div>
+
+          {/* Series progress dots */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 28 }}>
+            {Array.from({ length: ex.sets }).map((_, i) => (
+              <div key={i} style={{
+                width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700,
+                background: i < completedSets.length ? "linear-gradient(135deg, #0a4a2a, #00c864)" : i === completedSets.length ? "linear-gradient(135deg, #1a3a5c, #2563a8)" : "rgba(255,255,255,0.05)",
+                border: i === completedSets.length ? "2px solid #7ec8e3" : "2px solid transparent",
+                color: i < completedSets.length ? "#fff" : i === completedSets.length ? "#fff" : "#334455",
+                transition: "all 0.4s ease",
+                transform: i === completedSets.length ? "scale(1.15)" : "scale(1)"
+              }}>
+                {i < completedSets.length ? "✓" : i + 1}
+              </div>
+            ))}
+          </div>
+
+          {/* All done */}
+          {allDone ? (
+            <div style={{ ...S.card, textAlign: "center", background: "linear-gradient(135deg, #0a4a2a, #0d2a1a)", border: "1px solid #00c864" }}>
+              <div style={{ fontSize: 56, marginBottom: 8 }}>🎉</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#00c864", marginBottom: 8 }}>¡Ejercicio completado!</div>
+              <div style={{ color: "#8899aa", fontSize: 13, marginBottom: 16 }}>Completaste {ex.sets} series</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 16 }}>
+                {completedSets.map((s, i) => (
+                  <div key={i} style={{ background: "rgba(0,200,100,0.1)", border: "1px solid rgba(0,200,100,0.3)", borderRadius: 20, padding: "4px 12px", fontSize: 12, color: "#00c864" }}>
+                    S{s.set}: {s.kg}kg × {s.reps}
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setActiveExercise(null)} style={{ ...S.btn, background: "linear-gradient(135deg, #0a4a2a, #00c864)" }}>← Volver a la rutina</button>
+            </div>
+          ) : isResting ? (
+            /* REST TIMER */
+            <div style={{ ...S.card, textAlign: "center", background: "linear-gradient(135deg, #0d1b2a, #1a2a3a)", border: "1px solid #2563a8" }}>
+              <div style={{ fontSize: 13, color: "#7ec8e3", fontWeight: 700, marginBottom: 12, letterSpacing: 2 }}>DESCANSANDO</div>
+              <div style={{ fontSize: 72, fontWeight: 900, color: timerSecs <= 10 ? "#ef4444" : "#7ec8e3", marginBottom: 8, transition: "color 0.3s" }}>{fmt(timerSecs)}</div>
+              <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 50, height: 6, marginBottom: 16 }}>
+                <div style={{ background: timerSecs <= 10 ? "#ef4444" : "linear-gradient(90deg, #2563a8, #7ec8e3)", borderRadius: 50, height: 6, width: `${(timerSecs / ex.rest) * 100}%`, transition: "width 1s linear, background 0.3s" }} />
+              </div>
+              <div style={{ color: "#8899aa", fontSize: 13, marginBottom: 16 }}>Serie {completedSets.length + 1} de {ex.sets} viene</div>
+              <button onClick={() => { setTimerOn(false); setTimerSecs(0); }} style={{ ...S.btnOutline, width: "auto", padding: "10px 24px" }}>Saltar descanso →</button>
+            </div>
+          ) : (
+            /* ACTIVE SET */
+            <div>
+              <div style={{ ...S.card, background: "linear-gradient(135deg, #0d1b2a, #1a2a1a)", border: "1px solid rgba(0,200,100,0.3)" }}>
+                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                  <div style={{ fontSize: 13, color: "#00c864", fontWeight: 700, letterSpacing: 2, marginBottom: 4 }}>SERIE {completedSets.length + 1} DE {ex.sets}</div>
+                  <div style={{ fontSize: 32, fontWeight: 900 }}>{ex.reps} reps</div>
+                </div>
+
+                {/* Completed sets summary */}
+                {completedSets.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, color: "#556677", marginBottom: 8 }}>SERIES ANTERIORES</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {completedSets.map((s, i) => (
+                        <div key={i} style={{ background: "rgba(0,200,100,0.08)", border: "1px solid rgba(0,200,100,0.2)", borderRadius: 20, padding: "4px 10px", fontSize: 11, color: "#00c864" }}>
+                          S{s.set}: {s.kg}kg
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Weight input */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 12, color: "#8899aa", marginBottom: 8 }}>¿Cuánto peso usaste?</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <button onClick={() => { const v = parseFloat(weights[`${ex.name}-input`] || 0); setWeights(w => ({ ...w, [`${ex.name}-input`]: Math.max(0, v - 2.5).toString() })); }} style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid #1e3a5f", color: "#fff", fontSize: 22, cursor: "pointer" }}>−</button>
+                    <input
+                      type="number" placeholder="0"
+                      value={weights[`${ex.name}-input`] || ""}
+                      onChange={e => setWeights(w => ({ ...w, [`${ex.name}-input`]: e.target.value }))}
+                      style={{ flex: 1, background: "#111827", border: "2px solid #00c864", color: "#fff", padding: "16px", borderRadius: 12, fontSize: 28, fontWeight: 900, outline: "none", textAlign: "center" }}
+                    />
+                    <button onClick={() => { const v = parseFloat(weights[`${ex.name}-input`] || 0); setWeights(w => ({ ...w, [`${ex.name}-input`]: (v + 2.5).toString() })); }} style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(0,200,100,0.1)", border: "1px solid #00c864", color: "#00c864", fontSize: 22, cursor: "pointer" }}>+</button>
+                  </div>
+                  <div style={{ textAlign: "center", color: "#556677", fontSize: 12, marginTop: 6 }}>kg</div>
+                </div>
+
+                <button onClick={handleCompleteSet} style={{ ...S.btn, background: "linear-gradient(135deg, #0a4a2a, #00c864)", fontSize: 16, padding: "16px" }}>
+                  ✓ Serie {completedSets.length + 1} completada
+                </button>
               </div>
             </div>
-          ))}
-          <div style={{ ...S.card, textAlign: "center" }}>
-            <div style={{ fontSize: 13, color: "#8899aa", marginBottom: 12 }}>⏱ Descanso: {ex.rest}s</div>
-            {timerSecs > 0 || timerOn ? (
-              <div>
-                <div style={{ fontSize: 48, fontWeight: 900, color: timerSecs < 10 ? "#ef4444" : "#7ec8e3" }}>{fmt(timerSecs)}</div>
-                <button onClick={() => { setTimerOn(false); setTimerSecs(0); }} style={{ marginTop: 12, ...S.btnOutline, width: "auto", padding: "8px 20px" }}>Cancelar</button>
-              </div>
-            ) : (
-              <button onClick={() => { setTimerSecs(ex.rest); setTimerOn(true); }} style={{ ...S.btn, width: "auto", padding: "12px 32px", borderRadius: 50 }}>Iniciar Descanso ⏱</button>
-            )}
-          </div>
+          )}
+
+          {/* CSS animations */}
+          <style>{`
+            @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+            @keyframes slideIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+          `}</style>
         </div>
       </div>
     );
@@ -428,9 +519,13 @@ export default function App() {
           </div>
         ))}
         <div style={{ ...S.card, textAlign: "center", marginTop: 16 }}>
-          <div style={{ fontSize: 32, fontWeight: 900, color: "#7ec8e3", marginBottom: 4 }}>${selectedProgram.price} MXN</div>
+          {selectedProgram.badge && <div style={{ background: selectedProgram.price === 0 ? "rgba(0,200,100,0.15)" : "rgba(255,100,0,0.15)", border: `1px solid ${selectedProgram.price === 0 ? "#00c864" : "#ff6400"}`, borderRadius: 20, padding: "4px 16px", fontSize: 13, fontWeight: 700, color: selectedProgram.price === 0 ? "#00c864" : "#ff6400", display: "inline-block", marginBottom: 12 }}>{selectedProgram.badge}</div>}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 4 }}>
+            <div style={{ fontSize: 18, color: "#556677", textDecoration: "line-through" }}>${selectedProgram.originalPrice} MXN</div>
+            <div style={{ fontSize: 36, fontWeight: 900, color: selectedProgram.price === 0 ? "#00c864" : "#7ec8e3" }}>{selectedProgram.price === 0 ? "GRATIS" : `${selectedProgram.price} MXN`}</div>
+          </div>
           <div style={{ color: "#8899aa", fontSize: 12, marginBottom: 16 }}>Pago único · Acceso de por vida</div>
-          <button style={S.btn}>Comprar Programa 🔥</button>
+          <button style={{ ...S.btn, background: selectedProgram.price === 0 ? "linear-gradient(135deg, #0a4a2a, #00c864)" : "linear-gradient(135deg, #1a3a5c, #2563a8)" }}>{selectedProgram.price === 0 ? "Obtener Gratis 🎁" : "Comprar Programa 🔥"}</button>
         </div>
       </div>
     </div>
